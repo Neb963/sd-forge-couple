@@ -1,0 +1,50 @@
+diff --git a/extensions-builtin/sd_forge_multidiffusion/lib_multidiffusion/tiled_diffusion.py b/extensions-builtin/sd_forge_multidiffusion/lib_multidiffusion/tiled_diffusion.py
+--- a/extensions-builtin/sd_forge_multidiffusion/lib_multidiffusion/tiled_diffusion.py
++++ b/extensions-builtin/sd_forge_multidiffusion/lib_multidiffusion/tiled_diffusion.py
+@@
+ from backend.patcher.controlnet import ControlNet, T2IAdapter
++
++try:
++    from lib_couple.multidiffusion_context import (
++        MultiDiffusionTileContext,
++        reset_md_tile_context,
++        set_md_tile_context,
++    )
++except ImportError:
++    MultiDiffusionTileContext = None
++    reset_md_tile_context = None
++    set_md_tile_context = None
+@@
+-                x_tile_out = model_function(x_tile, ts_tile, **c_tile)
++                md_token = None
++                if set_md_tile_context is not None:
++                    md_token = set_md_tile_context(
++                        MultiDiffusionTileContext(
++                            bboxes=bboxes,
++                            full_latent_h=H,
++                            full_latent_w=W,
++                            tile_batch_count=len(bboxes),
++                        )
++                    )
++                try:
++                    x_tile_out = model_function(x_tile, ts_tile, **c_tile)
++                finally:
++                    if md_token is not None:
++                        reset_md_tile_context(md_token)
+@@
+-                x_tile_out = model_function(x_tile, t_tile, **c_tile)
++                md_token = None
++                if set_md_tile_context is not None:
++                    md_token = set_md_tile_context(
++                        MultiDiffusionTileContext(
++                            bboxes=bboxes,
++                            full_latent_h=H,
++                            full_latent_w=W,
++                            tile_batch_count=len(bboxes),
++                        )
++                    )
++                try:
++                    x_tile_out = model_function(x_tile, t_tile, **c_tile)
++                finally:
++                    if md_token is not None:
++                        reset_md_tile_context(md_token)
