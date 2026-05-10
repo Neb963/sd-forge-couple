@@ -10,7 +10,8 @@ import torch
 from lib_couple.logging import logger
 from modules.devices import device, dtype
 
-from .attention_masks import get_mask, lcm_for_list
+from .attention_masks import get_mask, get_multidiffusion_mask, lcm_for_list
+from .multidiffusion_context import get_md_tile_context
 
 
 class AttentionCouple:
@@ -80,9 +81,20 @@ class AttentionCouple:
         @torch.inference_mode()
         def attn2_output_patch(out, extra_options):
             cond_or_unconds = extra_options["cond_or_uncond"]
-            mask_downsample = get_mask(
-                mask, cls.batch_size, out.shape[1], extra_options["original_shape"]
-            )
+            md_ctx = get_md_tile_context()
+            if md_ctx is None:
+                mask_downsample = get_mask(
+                    mask, cls.batch_size, out.shape[1], extra_options["original_shape"]
+                )
+            else:
+                mask_downsample = get_multidiffusion_mask(
+                    mask,
+                    cls.batch_size,
+                    out.shape[1],
+                    extra_options["original_shape"],
+                    md_ctx,
+                )
+            mask_downsample = mask_downsample.to(device=out.device, dtype=out.dtype)
             outputs = []
             pos = 0
             for cond_or_uncond in cond_or_unconds:
