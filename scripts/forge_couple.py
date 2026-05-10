@@ -4,6 +4,7 @@ from typing import Callable
 
 from lib_couple import settings  # noqa
 from lib_couple.attention_couple import AttentionCouple
+from lib_couple.debug import ForgeCoupleDebug
 from lib_couple.gr_version import js
 from lib_couple.logging import logger
 from lib_couple.mapping import (
@@ -86,10 +87,9 @@ class ForgeCouple(scripts.Script):
 
         self.tile_idx += 1
         p.prompt = self.tiles[self.tile_idx]
-        debug: bool = args[-1]
+        debug: bool = args[16] if len(args) > 16 else args[-1]
 
         if debug:
-            print("")
             logger.info(f"[Tile Debug]\n{p.prompt}\n")
 
     def before_hr(self, *args, **kwargs):
@@ -167,7 +167,6 @@ class ForgeCouple(scripts.Script):
                 def_in_prompt,
             )
             if common_debug:
-                print("")
                 logger.info(f"[Common Prompts Debug]\n{prompts}\n")
 
         couples: list[str] = [chunk.strip() for chunk in prompts.split(separator)]
@@ -212,7 +211,6 @@ class ForgeCouple(scripts.Script):
                     self.invalidate(p)
                     return
 
-        # ===== Infotext =====
         fc_param: dict = {}
 
         fc_param["forge_couple"] = True
@@ -230,7 +228,6 @@ class ForgeCouple(scripts.Script):
         fc_param["forge_couple_def_in_prompt"] = def_in_prompt
 
         p.extra_generation_params.update(fc_param)
-        # ===== Infotext =====
 
         self.couples = couples
         self.valid = True
@@ -253,6 +250,9 @@ class ForgeCouple(scripts.Script):
         *args,
         **kwargs,
     ):
+        ForgeCoupleDebug.set_enabled(getattr(shared.opts, "fc_debug_logging", False))
+        ForgeCoupleDebug.set_dump_masks_enabled(getattr(shared.opts, "fc_debug_dump_masks", False))
+
         if (not enable) or (self.couples is None) or (not self.valid):
             return
 
@@ -265,7 +265,6 @@ class ForgeCouple(scripts.Script):
         if getattr(p, "_ad_inner", False):
             return
 
-        # ===== Init =====
         WIDTH: int = p.width
         HEIGHT: int = p.height
         IS_HORIZONTAL: bool = direction == "Horizontal"
@@ -282,9 +281,7 @@ class ForgeCouple(scripts.Script):
             TILE_SIZE: int = (
                 (WIDTH if IS_HORIZONTAL else HEIGHT) - 1
             ) // TILE_COUNT + 1
-        # ===== Init =====
 
-        # ===== Tiles =====
         match mode:
             case "Basic":
                 fc_args = basic_mapping(
@@ -318,7 +315,6 @@ class ForgeCouple(scripts.Script):
                 fc_args = advanced_mapping(
                     p.sd_model, self.couples, WIDTH, HEIGHT, mapping
                 )
-        # ===== Tiles =====
 
         assert len(fc_args.keys()) // 2 == LINE_COUNT
 
