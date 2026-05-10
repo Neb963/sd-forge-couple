@@ -43,5 +43,23 @@ def fc_settings():
         ).info('newlines would be shown as "\\n" literals'),
     )
 
+    opts.add_option(
+        "fc_debug_logging",
+        OptionInfo(
+            False,
+            "Debug logging",
+            **args,
+        ).info("write structured Forge Couple debug logs to logs/forge_couple_debug.log"),
+    )
+
+    opts.add_option(
+        "fc_debug_dump_masks",
+        OptionInfo(
+            False,
+            "Dump masks to disk",
+            **args,
+        ).info("when debug logging is enabled, save cropped masks to logs/forge_couple_masks"),
+    )
+
 
 on_ui_settings(fc_settings)
